@@ -15,17 +15,14 @@
       background: linear-gradient(135deg, #fff7f2, #ffe8dc);
       color: #2d2d2d;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       padding: 24px;
     }
 
     .container {
-      width: 100%;
-      max-width: 900px;
+      max-width: 1000px;
+      margin: 0 auto;
       background: white;
-      border-radius: 20px;
+      border-radius: 22px;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
       overflow: hidden;
     }
@@ -43,8 +40,8 @@
 
     .hero p {
       margin: 0;
-      font-size: 1rem;
       opacity: 0.95;
+      line-height: 1.5;
     }
 
     .content {
@@ -88,8 +85,8 @@
       color: white;
       border: none;
       border-radius: 12px;
-      padding: 14px 22px;
-      font-size: 1rem;
+      padding: 14px 20px;
+      font-size: 0.98rem;
       font-weight: bold;
       cursor: pointer;
       transition: transform 0.15s, background 0.2s;
@@ -106,6 +103,18 @@
       transform: none;
     }
 
+    .copy-btn {
+      background: #fff;
+      color: #c94f16;
+      border: 1px solid #ffd7c5;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+    }
+
+    .copy-btn:hover {
+      background: #fff6f1;
+    }
+
     .status {
       font-size: 0.95rem;
       color: #666;
@@ -120,17 +129,32 @@
       display: block;
     }
 
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
     .card {
       background: #fffaf7;
       border: 1px solid #ffe1d3;
       border-radius: 16px;
       padding: 18px;
-      margin-bottom: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
     }
 
     .card h2 {
-      margin: 0 0 12px;
-      font-size: 1.1rem;
+      margin: 0;
+      font-size: 1.08rem;
       color: #c94f16;
     }
 
@@ -138,13 +162,29 @@
       white-space: pre-wrap;
       line-height: 1.6;
       font-size: 0.98rem;
+      color: #333;
+    }
+
+    .tags-box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tag-pill {
+      background: white;
+      border: 1px solid #ffd7c5;
+      color: #9a3f14;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.92rem;
     }
 
     .footer-note {
-      margin-top: 10px;
-      font-size: 0.85rem;
-      color: #777;
+      margin-top: 14px;
       text-align: center;
+      color: #777;
+      font-size: 0.85rem;
     }
 
     @media (max-width: 640px) {
@@ -159,6 +199,10 @@
       button {
         width: 100%;
       }
+
+      .copy-btn {
+        width: auto;
+      }
     }
   </style>
 </head>
@@ -166,12 +210,15 @@
   <div class="container">
     <div class="hero">
       <h1>Etsy Listing Optimizer</h1>
-      <p>Turn rough product descriptions into better Etsy titles, tags, and sales-friendly descriptions.</p>
+      <p>Turn rough product descriptions into better Etsy titles, tags, and descriptions that are easier to use right away.</p>
     </div>
 
     <div class="content">
       <label for="input">Paste your product description</label>
-      <textarea id="input" placeholder="Example: Handmade soy candle with lavender scent, 8oz, perfect gift for birthdays and home decor..."></textarea>
+      <textarea
+        id="input"
+        placeholder="Example: Handmade cotton infant dress with floral pattern, soft breathable fabric, perfect for birthdays, baby showers, and family photos..."
+      ></textarea>
 
       <div class="button-row">
         <button id="generateBtn" onclick="generate()">Generate Listing</button>
@@ -179,9 +226,30 @@
       </div>
 
       <div class="results" id="results">
-        <div class="card">
-          <h2>Optimized Output</h2>
-          <div class="output-text" id="output"></div>
+        <div class="results-grid">
+          <div class="card">
+            <div class="card-header">
+              <h2>Optimized Title</h2>
+              <button class="copy-btn" onclick="copyText('titleOutput')">Copy Title</button>
+            </div>
+            <div class="output-text" id="titleOutput"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>Etsy Tags</h2>
+              <button class="copy-btn" onclick="copyTags()">Copy Tags</button>
+            </div>
+            <div class="tags-box" id="tagsOutput"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>Optimized Description</h2>
+              <button class="copy-btn" onclick="copyText('descriptionOutput')">Copy Description</button>
+            </div>
+            <div class="output-text" id="descriptionOutput"></div>
+          </div>
         </div>
       </div>
 
@@ -192,12 +260,62 @@
   </div>
 
   <script>
+    function parseResult(result) {
+      const titleMatch = result.match(/TITLE:\s*([\s\S]*?)\s*TAGS:/i);
+      const tagsMatch = result.match(/TAGS:\s*([\s\S]*?)\s*DESCRIPTION:/i);
+      const descriptionMatch = result.match(/DESCRIPTION:\s*([\s\S]*)/i);
+
+      const title = titleMatch ? titleMatch[1].trim() : "";
+      const rawTags = tagsMatch ? tagsMatch[1].trim() : "";
+      const description = descriptionMatch ? descriptionMatch[1].trim() : "";
+
+      const tags = rawTags
+        .split("\n")
+        .map(tag => tag.trim())
+        .map(tag => tag.replace(/^\d+\.\s*/, ""))
+        .map(tag => tag.replace(/^-\s*/, ""))
+        .filter(tag => tag.length > 0);
+
+      return { title, tags, description };
+    }
+
+    function renderTags(tags) {
+      const tagsOutput = document.getElementById("tagsOutput");
+      tagsOutput.innerHTML = "";
+
+      tags.forEach(tag => {
+        const pill = document.createElement("div");
+        pill.className = "tag-pill";
+        pill.textContent = tag;
+        tagsOutput.appendChild(pill);
+      });
+    }
+
+    async function copyText(elementId) {
+      const text = document.getElementById(elementId).textContent.trim();
+      if (!text) return;
+      await navigator.clipboard.writeText(text);
+    }
+
+    async function copyTags() {
+      const tags = Array.from(document.querySelectorAll(".tag-pill"))
+        .map(el => el.textContent.trim())
+        .filter(Boolean);
+
+      if (!tags.length) return;
+
+      await navigator.clipboard.writeText(tags.join("\n"));
+    }
+
     async function generate() {
       const text = document.getElementById("input").value.trim();
-      const output = document.getElementById("output");
       const status = document.getElementById("status");
       const button = document.getElementById("generateBtn");
       const results = document.getElementById("results");
+
+      const titleOutput = document.getElementById("titleOutput");
+      const descriptionOutput = document.getElementById("descriptionOutput");
+      const tagsOutput = document.getElementById("tagsOutput");
 
       if (!text) {
         status.textContent = "Please enter a product description first.";
@@ -206,8 +324,10 @@
 
       status.textContent = "Generating...";
       button.disabled = true;
-      output.textContent = "";
       results.classList.remove("show");
+      titleOutput.textContent = "";
+      descriptionOutput.textContent = "";
+      tagsOutput.innerHTML = "";
 
       try {
         const res = await fetch("https://etsy-ai-backend-isei.onrender.com/generate", {
@@ -222,7 +342,12 @@
           throw new Error(data.error || "Something went wrong.");
         }
 
-        output.textContent = data.result;
+        const parsed = parseResult(data.result);
+
+        titleOutput.textContent = parsed.title || "No title returned.";
+        descriptionOutput.textContent = parsed.description || "No description returned.";
+        renderTags(parsed.tags);
+
         results.classList.add("show");
         status.textContent = "Done.";
       } catch (err) {
