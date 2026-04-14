@@ -210,7 +210,7 @@
       results.classList.remove("show");
 
       try {
-        const res = await fetch("http://localhost:3000/generate", {
+        const res = await fetch("https://etsy-ai-backend-isei.onrender.com/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ description: text })
