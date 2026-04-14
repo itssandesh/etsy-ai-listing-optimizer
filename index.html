@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Etsy Listing Optimizer</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #fff7f2, #ffe8dc);
+      color: #2d2d2d;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #f1641e, #ff8c5a);
+      color: white;
+      padding: 32px;
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 2rem;
+    }
+
+    .hero p {
+      margin: 0;
+      font-size: 1rem;
+      opacity: 0.95;
+    }
+
+    .content {
+      padding: 28px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 1rem;
+      resize: vertical;
+      outline: none;
+      transition: border 0.2s, box-shadow 0.2s;
+    }
+
+    textarea:focus {
+      border-color: #f1641e;
+      box-shadow: 0 0 0 4px rgba(241, 100, 30, 0.12);
+    }
+
+    .button-row {
+      margin-top: 18px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #f1641e;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 22px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.15s, background 0.2s;
+    }
+
+    button:hover {
+      background: #d95212;
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      font-size: 0.95rem;
+      color: #666;
+    }
+
+    .results {
+      margin-top: 28px;
+      display: none;
+    }
+
+    .results.show {
+      display: block;
+    }
+
+    .card {
+      background: #fffaf7;
+      border: 1px solid #ffe1d3;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 1.1rem;
+      color: #c94f16;
+    }
+
+    .output-text {
+      white-space: pre-wrap;
+      line-height: 1.6;
+      font-size: 0.98rem;
+    }
+
+    .footer-note {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: #777;
+      text-align: center;
+    }
+
+    @media (max-width: 640px) {
+      .hero h1 {
+        font-size: 1.5rem;
+      }
+
+      .content {
+        padding: 20px;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="hero">
+      <h1>Etsy Listing Optimizer</h1>
+      <p>Turn rough product descriptions into better Etsy titles, tags, and sales-friendly descriptions.</p>
+    </div>
+
+    <div class="content">
+      <label for="input">Paste your product description</label>
+      <textarea id="input" placeholder="Example: Handmade soy candle with lavender scent, 8oz, perfect gift for birthdays and home decor..."></textarea>
+
+      <div class="button-row">
+        <button id="generateBtn" onclick="generate()">Generate Listing</button>
+        <span class="status" id="status"></span>
+      </div>
+
+      <div class="results" id="results">
+        <div class="card">
+          <h2>Optimized Output</h2>
+          <div class="output-text" id="output"></div>
+        </div>
+      </div>
+
+      <div class="footer-note">
+        Built for fast Etsy SEO experiments.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function generate() {
+      const text = document.getElementById("input").value.trim();
+      const output = document.getElementById("output");
+      const status = document.getElementById("status");
+      const button = document.getElementById("generateBtn");
+      const results = document.getElementById("results");
+
+      if (!text) {
+        status.textContent = "Please enter a product description first.";
+        return;
+      }
+
+      status.textContent = "Generating...";
+      button.disabled = true;
+      output.textContent = "";
+      results.classList.remove("show");
+
+      try {
+        const res = await fetch("http://localhost:3000/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ description: text })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Something went wrong.");
+        }
+
+        output.textContent = data.result;
+        results.classList.add("show");
+        status.textContent = "Done.";
+      } catch (err) {
+        status.textContent = "Error: " + err.message;
+      } finally {
+        button.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
